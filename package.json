@@ -1,0 +1,38 @@
+{
+  "name": "@perdieminc/mobile-app-versions",
+  "version": "1.0.0",
+  "description": "Fetch production app versions from Google Play Store and Apple App Store",
+  "license": "ISC",
+  "author": "PerDiem Inc",
+  "type": "commonjs",
+  "main": "index.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "test": "node --test test/index.test.js",
+    "publish:npm": "npm publish --access public",
+    "test:integration": "node --test test/integration.test.js"
+  },
+  "keywords": [
+    "mobile",
+    "app",
+    "version",
+    "google-play",
+    "app-store",
+    "ios",
+    "android"
+  ],
+  "dependencies": {
+    "axios": "^1.6.0",
+    "jsonwebtoken": "^9.0.0"
+  },
+  "devDependencies": {},
+  "files": [
+    "index.js"
+  ],
+  "repository": {
+    "type": "git",
+    "url": ""
+  }
+}
