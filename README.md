@@ -180,8 +180,10 @@ npm run test:integration
 ```
 
 ## Requirements
+Built for Node 22.x but can work on node 18.x
 
-- Node.js >= 18.0.0
+## Deployment 
+When pushing a git tag it will trigger a Github action that will deploy the package to NPM
 
 ## License
 
