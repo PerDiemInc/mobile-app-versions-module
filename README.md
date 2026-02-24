@@ -19,16 +19,16 @@ const client = new MobileAppVersions({
 
 // Get iOS version
 const iosVersion = await client.getIosVersion('com.example.app');
-console.log(iosVersion); // "1.2.3"
+console.log(iosVersion); // { version: "1.2.3" }
 
 // Get Android version
 const androidVersion = await client.getAndroidVersion('com.example.app');
-console.log(androidVersion); // "1.2.3"
+console.log(androidVersion); // { version: "1.2.3", status: "completed" }
 
 // Get both versions
 const versions = await client.getVersions('com.example.app');
 console.log(versions);
-// { ios: "1.2.3", android: "1.2.3" }
+// { ios: { version: "1.2.3" }, android: { version: "1.2.3", status: "completed" } }
 ```
 
 ## API Reference
@@ -53,8 +53,8 @@ const client = new MobileAppVersions(options);
 Fetches the production version of an iOS app from the App Store.
 
 ```javascript
-const version = await client.getIosVersion('com.example.app');
-// Returns: "1.2.3"
+const result = await client.getIosVersion('com.example.app');
+// Returns: { version: "1.2.3" }
 ```
 
 #### `getAndroidVersion(bundleId)`
@@ -62,8 +62,8 @@ const version = await client.getIosVersion('com.example.app');
 Fetches the production version of an Android app from Google Play.
 
 ```javascript
-const version = await client.getAndroidVersion('com.example.app');
-// Returns: "1.2.3"
+const result = await client.getAndroidVersion('com.example.app');
+// Returns: { version: "1.2.3", status: "completed" }
 ```
 
 #### `getVersions(bundleId)`
@@ -72,8 +72,8 @@ Fetches both iOS and Android versions for a single bundle ID.
 
 ```javascript
 const result = await client.getVersions('com.example.app');
-// Returns: { ios: "1.2.3", android: "1.2.3" }
-// If one fails: { ios: "1.2.3", android: null, errors: { android: "error message" } }
+// Returns: { ios: { version: "1.2.3" }, android: { version: "1.2.3", status: "completed" } }
+// If one fails: { ios: { version: "1.2.3" }, android: null, errors: { android: "error message" } }
 ```
 
 #### `getVersionsForMultipleBundles(bundleIds)`
@@ -87,18 +87,18 @@ const results = await client.getVersionsForMultipleBundles([
 ]);
 // Returns:
 // {
-//   "com.app.one": { ios: "1.0.0", android: "1.0.0" },
-//   "com.app.two": { ios: "2.0.0", android: "2.0.0" }
+//   "com.app.one": { ios: { version: "1.0.0" }, android: { version: "1.0.0", status: "completed" } },
+//   "com.app.two": { ios: { version: "2.0.0" }, android: { version: "2.0.0", status: "completed" } }
 // }
 ```
 
 #### Convenience Methods
 
 ```javascript
-// Shorthand for getIosVersion
+// Shorthand for getIosVersion - returns { version }
 await client.ios('com.example.app');
 
-// Shorthand for getAndroidVersion
+// Shorthand for getAndroidVersion - returns { version, status }
 await client.android('com.example.app');
 ```
 
@@ -150,7 +150,7 @@ The module throws descriptive errors for common issues:
 
 ```javascript
 try {
-  const version = await client.getIosVersion('invalid.bundle.id');
+  const result = await client.getIosVersion('invalid.bundle.id');
 } catch (error) {
   console.error(error.message);
   // "No iOS app found for bundleId: invalid.bundle.id"

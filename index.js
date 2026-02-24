@@ -77,7 +77,7 @@ class MobileAppVersions {
   /**
    * Get the production version of an iOS app from the App Store
    * @param {string} bundleId - The iOS bundle identifier (e.g., 'com.example.app')
-   * @returns {Promise<string>} The version string
+   * @returns {Promise<{version: string}>} The version object
    * @throws {Error} If no app or version is found
    */
   async getIosVersion(bundleId) {
@@ -97,7 +97,7 @@ class MobileAppVersions {
         throw new Error(`No version found for iOS bundleId: ${bundleId}`);
       }
 
-      return version;
+      return { version };
     } catch (error) {
       if (error.message.includes('bundleId')) {
         throw error;
@@ -109,7 +109,7 @@ class MobileAppVersions {
   /**
    * Get the production version of an Android app from Google Play
    * @param {string} bundleId - The Android package name (e.g., 'com.example.app')
-   * @returns {Promise<string>} The version string
+   * @returns {Promise<{version: string, status: string}>} The version string and release status
    * @throws {Error} If authentication fails or no releases are found
    */
   async getAndroidVersion(bundleId) {
@@ -150,7 +150,10 @@ class MobileAppVersions {
       const splitVersion = version?.split(' ') || [];
       const versionName = splitVersion?.length > 1 ? splitVersion[1] : splitVersion[0];
 
-      return versionName?.replace(/[()]/g, '') || '0.0.0';
+      return {
+        version: versionName?.replace(/[()]/g, '') || '0.0.0',
+        status: latestRelease.status,
+      };
     } catch (error) {
       if (error.message.includes('bundleId')) {
         throw error;
@@ -162,7 +165,7 @@ class MobileAppVersions {
   /**
    * Get production versions for both iOS and Android for a single bundle ID
    * @param {string} bundleId - The bundle identifier/package name
-   * @returns {Promise<{ios: string|null, android: string|null, errors: Object}>} Version info and any errors
+   * @returns {Promise<{ios: {version: string}|null, android: {version: string, status: string}|null, errors: Object}>} Version info and any errors
    */
   async getVersions(bundleId) {
     if (!bundleId) {
@@ -219,7 +222,7 @@ class MobileAppVersions {
   /**
    * Get only the iOS version for a bundle ID (convenience method)
    * @param {string} bundleId - The iOS bundle identifier
-   * @returns {Promise<string>} The iOS version string
+   * @returns {Promise<{version: string}>} The iOS version object
    */
   async ios(bundleId) {
     return this.getIosVersion(bundleId);
@@ -228,7 +231,7 @@ class MobileAppVersions {
   /**
    * Get only the Android version for a bundle ID (convenience method)
    * @param {string} bundleId - The Android package name
-   * @returns {Promise<string>} The Android version string
+   * @returns {Promise<{version: string, status: string}>} The Android version object
    */
   async android(bundleId) {
     return this.getAndroidVersion(bundleId);
