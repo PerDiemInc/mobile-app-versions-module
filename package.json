@@ -1,6 +1,6 @@
 {
   "name": "@perdieminc/mobile-app-versions",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Fetch production app versions from Google Play Store and Apple App Store",
   "license": "ISC",
   "author": "PerDiem Inc",
