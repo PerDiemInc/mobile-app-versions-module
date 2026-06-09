@@ -19,7 +19,7 @@ describe('Integration Tests', () => {
       const client = new MobileAppVersions();
 
       // Using Slack's bundle ID as it's a stable, well-known app
-      const version = await client.getIosVersion('com.tinyspeck.chatlyio');
+      const {version} = await client.getIosVersion('com.tinyspeck.chatlyio');
 
       assert.ok(version, 'Version should be returned');
       assert.ok(typeof version === 'string', 'Version should be a string');
@@ -51,11 +51,11 @@ describe('Integration Tests', () => {
       const result = await client.getVersions('com.tinyspeck.chatlyio');
 
       assert.ok(result.ios, 'iOS version should be present');
+      assert.ok(result.ios.version, 'iOS version object should have version field');
       assert.ok(result.errors?.android, 'Android error should be present');
 
-      console.log(`✓ iOS version: ${result.ios}`);
+      console.log(`✓ iOS version: ${result.ios.version}`);
       console.log(`✓ Android error (expected): ${result.errors.android}`);
     });
   });
 });
-

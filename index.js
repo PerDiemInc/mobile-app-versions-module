@@ -77,7 +77,7 @@ class MobileAppVersions {
   /**
    * Get the production version of an iOS app from the App Store
    * @param {string} bundleId - The iOS bundle identifier (e.g., 'com.example.app')
-   * @returns {Promise<string>} The version string
+   * @returns {Promise<{version: string}>} The version object
    * @throws {Error} If no app or version is found
    */
   async getIosVersion(bundleId) {
@@ -97,7 +97,7 @@ class MobileAppVersions {
         throw new Error(`No version found for iOS bundleId: ${bundleId}`);
       }
 
-      return version;
+      return { version };
     } catch (error) {
       if (error.message.includes('bundleId')) {
         throw error;
@@ -107,12 +107,50 @@ class MobileAppVersions {
   }
 
   /**
-   * Get the production version of an Android app from Google Play
+   * Get the public/published production version of an Android app from Google Play
    * @param {string} bundleId - The Android package name (e.g., 'com.example.app')
-   * @returns {Promise<string>} The version string
+   * @returns {Promise<{version: string|null, latest_release: {version: string|null, status: string|null}}>} The public/published version and the latest release (version + lifecycle state)
    * @throws {Error} If authentication fails or no releases are found
    */
   async getAndroidVersion(bundleId) {
+    const releases = await this.getAndroidReleases(bundleId);
+
+    if (!releases.length) {
+      throw new Error(`No production releases found for Android bundleId: ${bundleId}`);
+    }
+
+    const highestVersionCode = (release) => Math.max(0, ...release.versionCodes.map(Number));
+
+    // Pick the release with the highest version code (the newest), or null if none.
+    const latestByVersionCode = (releaseList) => {
+      let latest = null;
+      for (const release of releaseList) {
+        if (!latest || highestVersionCode(release) > highestVersionCode(latest)) {
+          latest = release;
+        }
+      }
+      return latest;
+    };
+
+    const latestRelease = latestByVersionCode(releases);
+    const latestPublished = latestByVersionCode(
+      releases.filter((release) => release.lifecycleState === 'RELEASE_LIFECYCLE_STATE_PUBLISHED'),
+    );
+
+    return {
+      version: latestPublished?.version || null,
+      latest_release: {version: latestRelease?.version , status: latestRelease.lifecycleState || null}
+    };
+  }
+
+  /**
+   * List Android production releases with their lifecycle state via the read-only releases.list endpoint
+   * @param {string} bundleId - The Android package name (e.g., 'com.example.app')
+   * @param {string} [track='production'] - The track to read
+   * @returns {Promise<Array<{version: string, releaseName: string, lifecycleState: string, versionCodes: number[]}>>} All releases with their lifecycle state
+   * @throws {Error} If authentication fails or the request fails
+   */
+  async getAndroidReleases(bundleId, track = 'production') {
     if (!bundleId) {
       throw new Error('bundleId is required');
     }
@@ -125,44 +163,35 @@ class MobileAppVersions {
     try {
       const options = { headers: { Authorization: `Bearer ${accessToken}` } };
 
-      // Create an edit session
-      const editResponse = await this.androidPublisherApi.post(
-        `/${bundleId}/edits`,
-        {},
+      const response = await this.androidPublisherApi.get(
+        `/${bundleId}/tracks/${track}/releases`,
         options
       );
 
-      const editId = editResponse?.data?.id || '';
-      const track = 'production';
+      const releases = response?.data?.releases || [];
 
-      // Get the production track info
-      const tracks = await this.androidPublisherApi.get(
-        `/${bundleId}/edits/${editId}/tracks/${track}`,
-        options
-      );
-
-      if (!tracks.data.releases?.length) {
-        throw new Error(`No production releases found for Android bundleId: ${bundleId}`);
-      }
-
-      const latestRelease = tracks.data.releases[tracks.data.releases.length - 1];
-      const version = latestRelease.name || null;
-      const splitVersion = version?.split(' ') || [];
-      const versionName = splitVersion?.length > 1 ? splitVersion[1] : splitVersion[0];
-
-      return versionName?.replace(/[()]/g, '') || '0.0.0';
+      return releases.map((release) => {
+        const splitVersion = release.releaseName?.split(' ') || [];
+        const versionName = splitVersion.length > 1 ? splitVersion[1] : splitVersion[0];
+        return {
+          version: versionName?.replace(/[()]/g, '') || '0.0.0',
+          releaseName: release.releaseName,
+          lifecycleState: release.releaseLifecycleState,
+          versionCodes: (release.activeArtifacts || []).map((artifact) => artifact.versionCode),
+        };
+      });
     } catch (error) {
       if (error.message.includes('bundleId')) {
         throw error;
       }
-      throw new Error(`Failed to fetch Android version for ${bundleId}: ${error.message}`);
+      throw new Error(`Failed to fetch Android releases for ${bundleId}: ${error.message}`);
     }
   }
 
   /**
    * Get production versions for both iOS and Android for a single bundle ID
    * @param {string} bundleId - The bundle identifier/package name
-   * @returns {Promise<{ios: string|null, android: string|null, errors: Object}>} Version info and any errors
+   * @returns {Promise<{ios: {version: string}|null, android: {version: string|null, latest_release: {version: string|null, status: string|null}}|null, errors: Object}>} Version info and any errors
    */
   async getVersions(bundleId) {
     if (!bundleId) {
@@ -219,16 +248,17 @@ class MobileAppVersions {
   /**
    * Get only the iOS version for a bundle ID (convenience method)
    * @param {string} bundleId - The iOS bundle identifier
-   * @returns {Promise<string>} The iOS version string
+   * @returns {Promise<{version: string}>} The iOS version object
    */
   async ios(bundleId) {
+
     return this.getIosVersion(bundleId);
   }
 
   /**
    * Get only the Android version for a bundle ID (convenience method)
    * @param {string} bundleId - The Android package name
-   * @returns {Promise<string>} The Android version string
+   * @returns {Promise<{version: string, status: string}>} The Android version object
    */
   async android(bundleId) {
     return this.getAndroidVersion(bundleId);
@@ -241,4 +271,3 @@ const createClient = (options) => new MobileAppVersions(options);
 module.exports = MobileAppVersions;
 module.exports.MobileAppVersions = MobileAppVersions;
 module.exports.createClient = createClient;
-
