@@ -9,6 +9,10 @@
   "engines": {
     "node": ">=20.0.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PerDiemInc/mobile-app-versions-module"
+  },
   "scripts": {
     "test": "node --test test/index.test.js",
     "publish:npm": "npm publish --access public",
@@ -30,9 +34,5 @@
   "devDependencies": {},
   "files": [
     "index.js"
-  ],
-  "repository": {
-    "type": "git",
-    "url": ""
-  }
+  ]
 }
